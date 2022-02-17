@@ -10,9 +10,10 @@ public class Voxel
     private static DensityFunction m_func;
     static private float m_increment;
     private Vector3 m_botLeftCoord;
-    private byte m_case;
+    private byte m_case = 0;
+    private Vector3[] coords = new Vector3[8];
 
-    private readonly int[] m_numPolyTable =
+    private readonly static int[] m_numPolyTable =
     {
         0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,2,1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,3,
         1,2,2,3,2,3,3,4,2,3,3,4,3,4,4,3,2,3,3,2,3,4,4,3,3,4,4,3,4,5,5,2,
@@ -24,7 +25,7 @@ public class Voxel
         3,4,4,5,4,5,3,4,4,5,5,2,3,4,2,1,2,3,3,2,3,4,2,1,3,2,4,1,2,1,1,0
     };
 
-    private readonly int[,] m_triCount = {{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+    private readonly static int[,] m_triCount = {{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 {0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 {0, 1, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 {1, 8, 3, 9, 8, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
@@ -301,16 +302,16 @@ public class Voxel
     }
 
     // Constructor
-    public Voxel(Vector3 pos, float increment)
+    public Voxel(Vector3 pos, float increment, DensityFunction densityFunc)
     {
         BotLeftCoord = pos;
         m_increment = increment;
-        Case = 0;
+        DensityFunc = densityFunc;
+        CalculateByte();
     }
 
     public void CalculateByte()
     {
-        Vector3[] coords = new Vector3[8];
         coords[0] = BotLeftCoord;
         coords[1] = coords[0] + m_increment * Vector3.up;
         coords[2] = coords[1] + m_increment * Vector3.right;
@@ -320,7 +321,7 @@ public class Voxel
         coords[6] = coords[2] + m_increment * Vector3.forward;
         coords[7] = coords[3] + m_increment * Vector3.forward;
 
-        for (int i = 0; i < 8; i++) 
+        for (int i = 0; i < 8; i++)
         {
             // ret &= (byte)(Convert.ToInt32((m_func(coords[i]) > 0)) << i)
             // ret |= (m_func(coords[i]) > 0) ? (byte)(1 << i) : (byte)0;
@@ -331,5 +332,96 @@ public class Voxel
         }
     }
 
-    
+    public Vector3 GetEdgeZero(int edge)
+    {
+        // Function: returns 0 of edge
+        // Finds the indices of the vertices for edge
+        int idx1;
+        int idx2;
+        switch (edge)
+        {
+            case 0:
+                idx1 = 0;
+                idx2 = 1;
+                break;
+            case 1:
+                idx1 = 1;
+                idx2 = 2;
+                break;
+            case 2:
+                idx1 = 2;
+                idx2 = 3;
+                break;
+            case 3:
+                idx1 = 3;
+                idx2 = 0;
+                break;
+            case 4:
+                idx1 = 4;
+                idx2 = 5;
+                break;
+            case 5:
+                idx1 = 5;
+                idx2 = 6;
+                break;
+            case 6:
+                idx1 = 6;
+                idx2 = 7;
+                break;
+            case 7:
+                idx1 = 7;
+                idx2 = 4;
+                break;
+            case 8:
+                idx1 = 0;
+                idx2 = 4;
+                break;
+            case 9:
+                idx1 = 1;
+                idx2 = 5;
+                break;
+            case 10:
+                idx1 = 2;
+                idx2 = 6;
+                break;
+            case 11:
+                idx1 = 3;
+                idx2 = 7;
+                break;
+            default:
+                idx1 = -1;
+                idx2 = -1;
+                Debug.Log("Mistake");
+                break;
+        }
+        // Pass vertices into density function
+        double dense1 = DensityFunc(coords[idx1]);
+        double dense2 = DensityFunc(coords[idx2]);
+        // Compute distance between vertices
+        float dist = (float)(dense1/(dense1-dense2));
+        // Return point along edge where = 0
+        return coords[idx2]*dist + coords[idx1]*(1-dist);
+    }
+
+    public Vector3[] GetTriangles()
+    {
+        // Function: return 3N array of Vector3 coords
+        // Group of 3 Vector3 => triangles
+        // Look up no. triangles
+        int n = m_numPolyTable[Case];
+        Vector3[] triangles = new Vector3[3*n];
+        // For each triangle
+        for (int i = 0; i < n; i++)
+        {
+            // Get edge numbers
+            int edge1 = m_triCount[Case,3*i];
+            int edge2 = m_triCount[Case,3*i+1];
+            int edge3 = m_triCount[Case,3*i+2];
+            // Get triangle vertices
+            triangles[3*i] = GetEdgeZero(edge1);
+            triangles[3*i+1] = GetEdgeZero(edge2);
+            triangles[3*i+2] = GetEdgeZero(edge3);
+        }
+        return triangles;
+    }
 }
