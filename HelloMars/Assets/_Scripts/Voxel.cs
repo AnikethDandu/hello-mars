@@ -336,63 +336,17 @@ public class Voxel
     {
         // Function: returns 0 of edge
         // Finds the indices of the vertices for edge
-        int idx1;
-        int idx2;
-        switch (edge)
+        int idx1 = (edge > 7) ? edge-8 : edge;
+        int idx2 = (edge > 7) ? edge-4: edge + 1;
+        if (edge == 3)
         {
-            case 0:
-                idx1 = 0;
-                idx2 = 1;
-                break;
-            case 1:
-                idx1 = 1;
-                idx2 = 2;
-                break;
-            case 2:
-                idx1 = 2;
-                idx2 = 3;
-                break;
-            case 3:
-                idx1 = 3;
-                idx2 = 0;
-                break;
-            case 4:
-                idx1 = 4;
-                idx2 = 5;
-                break;
-            case 5:
-                idx1 = 5;
-                idx2 = 6;
-                break;
-            case 6:
-                idx1 = 6;
-                idx2 = 7;
-                break;
-            case 7:
-                idx1 = 7;
-                idx2 = 4;
-                break;
-            case 8:
-                idx1 = 0;
-                idx2 = 4;
-                break;
-            case 9:
-                idx1 = 1;
-                idx2 = 5;
-                break;
-            case 10:
-                idx1 = 2;
-                idx2 = 6;
-                break;
-            case 11:
-                idx1 = 3;
-                idx2 = 7;
-                break;
-            default:
-                idx1 = -1;
-                idx2 = -1;
-                Debug.Log("Mistake");
-                break;
+            idx1 = 3;
+            idx2 = 0;
+        }
+        if (edge == 7)
+        {
+            idx1 = 7;
+            idx2 = 4;
         }
         // Pass vertices into density function
         double dense1 = DensityFunc(coords[idx1]);
